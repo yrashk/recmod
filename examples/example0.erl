@@ -8,4 +8,4 @@
 -export([test/0]).
 
 test() ->
-    io:format("This: ~p Self: ~p~n",[THIS, SELF]).
+    io:format("~p This: ~p Self: ~p~n",[Par2,THIS, SELF]).

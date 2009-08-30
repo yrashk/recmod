@@ -337,11 +337,10 @@ guard_test(Any,St) ->
     gexpr(Any,St).
 
 gexpr({var,L,V},St) ->
-     case index(lists:keyfind(V,2,St#recmod.parameters),St#recmod.parameters) of
- 	N when N > 0 ->
- 	    {call,L,{remote,L,{atom,L,erlang},{atom,L,element}},
- 	     [{integer,L,N+1},{var,L,'THIS'}]};
- 	_ ->
+     case lists:keyfind(V,2,St#recmod.parameters) of
+ 	{Field, V} ->
+	     {record_field,L,{var, L, 'THIS'},St#recmod.name,{atom, L, Field}};
+ 	false ->
  	    {var,L,V}
      end;
 gexpr({integer,Line,I},_St) -> {integer,Line,I};
@@ -416,11 +415,10 @@ exprs([E0|Es],St) ->
 exprs([],_St) -> [].
 
 expr({var,L,V},St) ->
-     case index(lists:keyfind(V,2,St#recmod.parameters),St#recmod.parameters) of
- 	N when N > 0 ->
- 	    {call,L,{remote,L,{atom,L,erlang},{atom,L,element}},
- 	     [{integer,L,N+1},{var,L,'THIS'}]};
- 	_ ->
+     case lists:keyfind(V,2,St#recmod.parameters) of
+ 	{Field, V} ->
+	     {record_field,L,{var, L, 'THIS'},St#recmod.name,{atom, L, Field}};
+ 	false ->
  	    {var,L,V}
      end;
 expr({integer,Line,I},_St) -> {integer,Line,I};
@@ -549,15 +547,6 @@ fun_clauses([C0|Cs],St) ->
     C1 = clause(C0,St),
     [C1|fun_clauses(Cs,St)];
 fun_clauses([],_St) -> [].
-
-% %% Return index from 1 upwards, or 0 if not in the list.
-%
-index(false, _) -> 0;
-index(X,Ys) -> index(X,Ys,1).
-
-index(X,[X|Ys],A) -> A;
-index(X,[Y|Ys],A) -> index(X,Ys,A+1);
-index(X,[],A) -> 0.
 
 make_vars(N, L) ->
     make_vars(1, N, L).
