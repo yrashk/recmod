@@ -9,7 +9,7 @@
 -record(example0e,
         { par1, par3 }).
 
--export([test1/0]).
+-export([test/0]).
 
-test1()  ->
-    record_fields().
+test() when Par3 == "Pass" ->
+	"You did it!".

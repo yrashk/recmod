@@ -7,5 +7,5 @@
 	 }).
 -export([test/0]).
 
-test()  ->
+test() ->
     record_fields().
