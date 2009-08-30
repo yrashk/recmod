@@ -185,8 +185,13 @@ clauses(Name,[C|Cs],St) ->
     T = {tuple,L,[{atom, L, St#recmod.name}|
 		  [{var,L,V} || {_,V} <- St#recmod.parameters ]
 		 ]},
-    [{clause,L,H++[{match,L,T,{var,L,'THIS'}}],G,B},
-     {clause,L,H++[{match,L,{var,L,'_'},{var,L,'THIS'}}],G,
+    [{clause,L,H++[{match,L,T,{var,L,'THIS'}}],G,B}, % original clause
+     {clause,L,H++[{match,L,T,{var,L,'THIS'}}],G, % function_clause "handler". Since it will most probably generate warnings, TODO: generate this conditionally
+      [
+       {call, L, {remote, L, {atom, L, erlang}, {atom, L, error}},
+	[{atom, L, undef}]}
+      ]},
+     {clause,L,H++[{match,L,{var,L,'_'},{var,L,'THIS'}}],G, % THIS does not match, lets try to corce it
       [
        {call, L, {atom, L, Name}, [{call,L,{remote,L,{var,L,'THIS'},{atom, L, to_parent}}, []}]}
       ]}
