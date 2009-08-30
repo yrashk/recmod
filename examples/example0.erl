@@ -8,4 +8,4 @@
 -export([test/0]).
 
 test() ->
-    record_fields().
+    io:format("This: ~p Self: ~p~n",[THIS, SELF]).
