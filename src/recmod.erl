@@ -209,9 +209,11 @@ emit_clause(function_clause, Name, L,H,T,G,B,#recmod{extends=Extends}=St) when E
 emit_clause(function_clause, _Name, _L,_H,_T,_G,_B,_St) ->
     [];
 emit_clause(coercion, Name, L,H,T,G,B,St) ->
+    {H1,_} = lists:foldl(fun (H0,{Hs,Ctr}) -> {[{match, L, H0, {var, L, list_to_atom("_Arg" ++ erlang:integer_to_list(Ctr))}}|Hs],Ctr+1} end, {[],1}, H),
+    H1Args = lists:map(fun (Ctr) -> {var, L, list_to_atom("_Arg" ++ erlang:integer_to_list(Ctr))} end, lists:seq(1,length(H1))),
     [{clause,L,H++[{match,L,{var,L,'_'},{var,L,'THIS'}}],[], % THIS does not match, lets try to corce it
       [
-       {call, L, {atom, L, Name}, [{call,L,{remote,L,{var,L,'THIS'},{atom, L, to_parent}}, []}]}
+       {call, L, {atom, L, Name}, H1Args++[{call,L,{remote,L,{var,L,'THIS'},{atom, L, to_parent}}, []}]}
       ]}].
 
 
