@@ -9,7 +9,8 @@
 	  static = [{record_fields,0}],
 	  functions = [],
 	  extends,
-	  extends_parameters
+	  extends_parameters,
+	  custom_to_parent = false
 	 }).
 
 parse_transform(Forms, _Options) ->
@@ -30,7 +31,7 @@ parse_transform(Forms, _Options) ->
 				    end
 			    end,     
 			    Forms4),
-    CForms = H ++ [RecordFields,NewRecord,ToParent] ++ Readers ++ T,
+    CForms = H ++ [RecordFields,NewRecord] ++ ToParent ++ Readers ++ T,
 %    io:format("~p~n",[CForms]),
     CForms.
     
@@ -62,6 +63,10 @@ form({attribute,L,static, StF}=Form, #recmod{ static=StF0 }=St0) when is_list(St
 % Get extends
 form({attribute,L,extends, Extends}=Form, St0) when is_atom(Extends) ->
     {Form, St0#recmod{ extends=Extends }};
+
+% Get custom to_parent
+form({function,L,to_parent,0,Clauses}=Form, St0) ->
+    {Form, St0#recmod{ custom_to_parent = true }};
 
 form(F, St0) ->
     {F, St0}.
@@ -142,6 +147,8 @@ new_reader({Field,Param},St) ->
 
 %% to_parent
 
+new_to_parent(#recmod{custom_to_parent = true}) ->
+    [];
 new_to_parent(#recmod{extends=Rec,extends_parameters=[_|_]}=St) when Rec /= undefined ->
     T = {tuple,0,[{atom, 0, St#recmod.name}|
 		  [{var,0,list_to_atom("_" ++ atom_to_list(V))} || {_,V} <- St#recmod.parameters ]
@@ -150,17 +157,17 @@ new_to_parent(#recmod{extends=Rec,extends_parameters=[_|_]}=St) when Rec /= unde
     CommonRecFields = lists:map(fun (F) ->
 					{record_field,0,{atom, 0, F},{record_field,0,{var,0,'THIS'},St#recmod.name,{atom,0,F}}}
 				end, CommonFields),
-    {function,0,to_parent,1,
-     [{clause, 0, [{match, 0,T,{var,0,'THIS'}}], [],
-       [{record, 0, Rec, CommonRecFields}]}]};
+    [{function,0,to_parent,1,
+      [{clause, 0, [{match, 0,T,{var,0,'THIS'}}], [],
+	[{record, 0, Rec, CommonRecFields}]}]}];
 
 new_to_parent(St) ->    
     T = {tuple,0,[{atom, 0, St#recmod.name}|
 		  [{var,0,list_to_atom("_" ++ atom_to_list(V))} || {_,V} <- St#recmod.parameters ]
 		 ]},
-    {function,0,to_parent,1,
-     [{clause,0,[{match, 0, T,{var,0,'THIS'}}],[],
-       [{var, 0, 'THIS'}]}]}.
+    [{function,0,to_parent,1,
+      [{clause,0,[{match, 0, T,{var,0,'THIS'}}],[],
+	[{var, 0, 'THIS'}]}]}].
 
 %% fields
 fields([F|Fs]) ->
