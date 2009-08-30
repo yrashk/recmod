@@ -186,9 +186,9 @@ clauses(Name,[C|Cs],St) ->
 		  [{var,L,V} || {_,V} <- St#recmod.parameters ]
 		 ]},
     [{clause,L,H++[{match,L,T,{var,L,'THIS'}}],G,B},
-     {clause,L,H++[{match,L,{var,L,'_'},{var,L,'THIS0'}}],G,
+     {clause,L,H++[{match,L,{var,L,'_'},{var,L,'THIS'}}],G,
       [
-       {match, L, {var, L, 'THIS'}, {call,L,{remote,L,{var,L,'THIS0'},{atom, L, to_parent}}, []}}|B
+       {call, L, {atom, L, Name}, [{call,L,{remote,L,{var,L,'THIS'},{atom, L, to_parent}}, []}]}
       ]}
      |clauses(Name,Cs,St)];
 clauses(_,[],_St) -> [].
