@@ -144,7 +144,7 @@ new_reader({Field,Param},St) ->
 
 new_to_parent(#recmod{extends=Rec,extends_parameters=[_|_]}=St) when Rec /= undefined ->
     T = {tuple,0,[{atom, 0, St#recmod.name}|
-		  [{var,0,V} || {_,V} <- St#recmod.parameters ]
+		  [{var,0,list_to_atom("_" ++ atom_to_list(V))} || {_,V} <- St#recmod.parameters ]
 		 ]},
     CommonFields = lists:map(fun ({F,_}) -> F end, sets:to_list(sets:intersection(sets:from_list(St#recmod.parameters),sets:from_list(St#recmod.extends_parameters)))),
     CommonRecFields = lists:map(fun (F) ->
@@ -156,7 +156,7 @@ new_to_parent(#recmod{extends=Rec,extends_parameters=[_|_]}=St) when Rec /= unde
 
 new_to_parent(St) ->    
     T = {tuple,0,[{atom, 0, St#recmod.name}|
-		  [{var,0,V} || {_,V} <- St#recmod.parameters ]
+		  [{var,0,list_to_atom("_" ++ atom_to_list(V))} || {_,V} <- St#recmod.parameters ]
 		 ]},
     {function,0,to_parent,1,
      [{clause,0,[{match, 0, T,{var,0,'THIS'}}],[],
@@ -183,7 +183,7 @@ function(Name, Arity, Clauses0, St) ->
 clauses(Name,[C|Cs],St) ->
     {clause,L,H,G,B} = clause(C,St),
     T = {tuple,L,[{atom, L, St#recmod.name}|
-		  [{var,L,V} || {_,V} <- St#recmod.parameters ]
+		  [{var,L,list_to_atom("_" ++ atom_to_list(V))} || {_,V} <- St#recmod.parameters ]
 		 ]},
     emit_clause(original, Name,L,H,T,G,B,St) ++ emit_clause(function_clause, Name,L,H,T,G,B,St) ++ emit_clause(coercion, Name,L,H,T,G,B,St) ++ clauses(Name,Cs,St);
 
@@ -196,7 +196,7 @@ clause({clause,L,H0,G0,B0},St) ->
     {clause,L,H1,G1,B1}.
 
 emit_clause(original, Name, L,H,T,G,B,St) ->
-    [{clause,L,H++[{match,L,T,{var,L,'THIS'}}],G,B}]; % original clause
+    [{clause,L,H++[{match,L,T,{var,L,'THIS'}}],G,[{var,L,'THIS'}|B]}]; % original clause
 emit_clause(function_clause, Name, L,H,T,G,B,#recmod{extends=Extends}=St) when Extends /= undefined ->
     {H1,_} = lists:foldl(fun (H0,{Hs,Ctr}) -> {[{match, L, H0, {var, L, list_to_atom("_Arg" ++ erlang:integer_to_list(Ctr))}}|Hs],Ctr+1} end, {[],1}, H),
     H1Args = lists:map(fun (Ctr) -> {var, L, list_to_atom("_Arg" ++ erlang:integer_to_list(Ctr))} end, lists:seq(1,length(H1))),
@@ -318,16 +318,14 @@ guard_test(Expr={call,Line,{atom,La,F},As0},St) ->
 guard_test(Any,St) ->
     gexpr(Any,St).
 
-gexpr({var,L,V},_St) ->
-    {var,L,V};
-% %% alternative implementation of accessing module parameters
-%     case index(V,St#pmod.parameters) of
-% 	N when N > 0 ->
-% 	    {call,L,{remote,L,{atom,L,erlang},{atom,L,element}},
-% 	     [{integer,L,N+1},{var,L,'THIS'}]};
-% 	_ ->
-% 	    {var,L,V}
-%     end;
+gexpr({var,L,V},St) ->
+     case index(lists:keyfind(V,2,St#recmod.parameters),St#recmod.parameters) of
+ 	N when N > 0 ->
+ 	    {call,L,{remote,L,{atom,L,erlang},{atom,L,element}},
+ 	     [{integer,L,N+1},{var,L,'THIS'}]};
+ 	_ ->
+ 	    {var,L,V}
+     end;
 gexpr({integer,Line,I},_St) -> {integer,Line,I};
 gexpr({char,Line,C},_St) -> {char,Line,C};
 gexpr({float,Line,F},_St) -> {float,Line,F};
@@ -399,15 +397,14 @@ exprs([E0|Es],St) ->
     [E1|exprs(Es,St)];
 exprs([],_St) -> [].
 
-expr({var,L,V},_St) ->
-    {var,L,V};
-%     case index(V,St#pmod.parameters) of
-% 	N when N > 0 ->
-% 	    {call,L,{remote,L,{atom,L,erlang},{atom,L,element}},
-% 	     [{integer,L,N+1},{var,L,'THIS'}]};
-% 	_ ->
-% 	    {var,L,V}
-%     end;
+expr({var,L,V},St) ->
+     case index(lists:keyfind(V,2,St#recmod.parameters),St#recmod.parameters) of
+ 	N when N > 0 ->
+ 	    {call,L,{remote,L,{atom,L,erlang},{atom,L,element}},
+ 	     [{integer,L,N+1},{var,L,'THIS'}]};
+ 	_ ->
+ 	    {var,L,V}
+     end;
 expr({integer,Line,I},_St) -> {integer,Line,I};
 expr({float,Line,F},_St) -> {float,Line,F};
 expr({atom,Line,A},_St) -> {atom,Line,A};
@@ -537,11 +534,12 @@ fun_clauses([],_St) -> [].
 
 % %% Return index from 1 upwards, or 0 if not in the list.
 %
-% index(X,Ys) -> index(X,Ys,1).
-%
-% index(X,[X|Ys],A) -> A;
-% index(X,[Y|Ys],A) -> index(X,Ys,A+1);
-% index(X,[],A) -> 0.
+index(false, _) -> 0;
+index(X,Ys) -> index(X,Ys,1).
+
+index(X,[X|Ys],A) -> A;
+index(X,[Y|Ys],A) -> index(X,Ys,A+1);
+index(X,[],A) -> 0.
 
 make_vars(N, L) ->
     make_vars(1, N, L).
