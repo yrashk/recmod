@@ -1,0 +1,4 @@
+-module(extrecmod).
+-compile({parse_transform, recmod}).
+-extends(baserecmod).
+-include("records.hrl").
