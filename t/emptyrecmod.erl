@@ -1,0 +1,3 @@
+-module(emptyrecmod).
+-compile({parse_transform, recmod}).
+-include("records.hrl").

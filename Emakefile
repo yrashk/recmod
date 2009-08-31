@@ -2,7 +2,8 @@
 	{ i, ".." },
 	{ outdir, "./ebin" }
 ]}.
-{ 'examples/*', [ debug_info,
+{ 't/*', [ debug_info,
 	{ i, ".." },
-	{ outdir, "./examples" }
+	{ i, "t" },
+	{ outdir, "./t" }
 ]}.

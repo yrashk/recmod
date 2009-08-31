@@ -10,7 +10,8 @@
 	  functions = [],
 	  extends,
 	  extends_parameters,
-	  custom_to_parent = false
+	  custom_to_parent = false,
+	  has_exports = false
 	 }).
 
 parse_transform(Forms, _Options) ->
@@ -21,6 +22,7 @@ parse_transform(Forms, _Options) ->
     NewRecord = new_new(St3),
     Readers = new_readers(St3#recmod.parameters,St3),
     ToParent = new_to_parent(St3),
+    Exports = standard_exports(St3),
     {Forms4, St4} = forms(Forms3, St3, fun exports/2),
     {H,T} = lists:splitwith(fun (X) ->
 				    case X of
@@ -31,7 +33,7 @@ parse_transform(Forms, _Options) ->
 				    end
 			    end,     
 			    Forms4),
-    CForms = H ++ [RecordFields,NewRecord] ++ ToParent ++ Readers ++ T,
+    CForms = H ++ Exports ++ [RecordFields,NewRecord] ++ ToParent ++ Readers ++ T,
 %    io:format("~p~n",[CForms]),
     CForms.
     
@@ -95,24 +97,34 @@ extension(F, St0) ->
 
 
 %% exports
-exports({attribute,L,export,Exports}, #recmod{static=StF,parameters=Params}=St) ->
+exports({attribute,L,export,Exports}, #recmod{static=StF}=St0) ->
     {{attribute,L,export, 
-      lists:map(fun({Field,_Param}) ->
-			{Field,1}
-		end, Params) ++
-      [{record_fields,0},{new,0},{to_parent,1}|
-       lists:map(fun({Name0, Arity0}) ->
-			 {Name0, Arity0+1}
-		 end,
-		 lists:filter(fun ({Name,Arity}) ->
-				      not (lists:member(Name, StF) orelse lists:member({Name, Arity}, StF))
+      default_exports(St0) ++
+      lists:map(fun({Name0, Arity0}) ->
+			{Name0, Arity0+1}
+		end,
+		lists:filter(fun ({Name,Arity}) ->
+				     not (lists:member(Name, StF) orelse lists:member({Name, Arity}, StF))
 			     end,
-			      Exports))]
-     }, St};
+			     Exports))
+     }, St0#recmod{has_exports=true}};
 
 exports(F, St0) ->
     {F, St0}.
 
+default_exports(#recmod{parameters=Params, has_exports=false}=_St) ->
+    lists:map(fun({Field,_Param}) ->
+		      {Field,1}
+	      end, Params) ++
+	[{record_fields,0},{new,0},{to_parent,1}];
+default_exports(_) ->
+    [].
+
+standard_exports(#recmod{has_exports=false}=St) ->
+    [{attribute,0,export, 
+      default_exports(St)}];
+standard_exports(_) ->
+    [].
 
 %% record_fields
 new_record_fields(St) ->

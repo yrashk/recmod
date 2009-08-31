@@ -1,2 +1,3 @@
 ebin/*.beam
-examples/*.beam
+t/*.beam
+_tests/*
