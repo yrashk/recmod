@@ -5,7 +5,7 @@ compile:
 	@erl -pa ebin ../epitest/ebin -noshell -s make all -s erlang halt
 
 clean:
-	rm -rf ebin/*.beam examples/*.beam
+	rm -rf ebin/*.beam t/*.beam
 
 
 test: all

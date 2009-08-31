@@ -99,7 +99,6 @@ extension(F, St0) ->
 %% exports
 exports({attribute,L,export,Exports}, #recmod{static=StF}=St0) ->
     {{attribute,L,export, 
-      default_exports(St0) ++
       lists:map(fun({Name0, Arity0}) ->
 			{Name0, Arity0+1}
 		end,
@@ -112,17 +111,13 @@ exports({attribute,L,export,Exports}, #recmod{static=StF}=St0) ->
 exports(F, St0) ->
     {F, St0}.
 
-default_exports(#recmod{parameters=Params, has_exports=false}=_St) ->
-    lists:map(fun({Field,_Param}) ->
+standard_exports(#recmod{parameters = Params}=St) ->
+    [{attribute,0,export, 
+     lists:map(fun({Field,_Param}) ->
 		      {Field,1}
 	      end, Params) ++
-	[{record_fields,0},{new,0},{to_parent,1}];
-default_exports(_) ->
-    [].
-
-standard_exports(#recmod{has_exports=false}=St) ->
-    [{attribute,0,export, 
-      default_exports(St)}];
+	[{record_fields,0},{new,0},{to_parent,1}] 
+     }];
 standard_exports(_) ->
     [].
 
@@ -239,7 +234,7 @@ emit_clause(function_clause, _Name, _L,_H,_T,_G,_B,_St) ->
 emit_clause(coercion, Name, L,H,T,G,B,St) ->
     {H1,_} = lists:foldl(fun (H0,{Hs,Ctr}) -> {[{match, L, H0, {var, L, list_to_atom("_Arg" ++ erlang:integer_to_list(Ctr))}}|Hs],Ctr+1} end, {[],1}, H),
     H1Args = lists:map(fun (Ctr) -> {var, L, list_to_atom("_Arg" ++ erlang:integer_to_list(Ctr))} end, lists:seq(1,length(H1))),
-    [{clause,L,H++[{match,L,{var,L,'_'},{var,L,'THIS'}}],[], % THIS does not match, lets try to corce it
+    [{clause,L,H1++[{match,L,{var,L,'_'},{var,L,'THIS'}}],[], % THIS does not match, lets try to corce it
       [
        {call, L, {atom, L, Name}, H1Args++[{tuple, L, [{var, L, 'THIS'},{call,L,{remote,L,{var,L,'THIS'},{atom, L, to_parent}}, []}]}]}
       ]}].
