@@ -214,7 +214,7 @@ emit_clause(original, Name, L,H,T,G,B,St) ->
      {clause,L,H++[{match,L,{tuple, L, [{var, L, '_'},T]},{tuple, L, [{var, L, 'SELF'}, {var,L,'THIS'}]}}],G,[{var,L,'THIS'},{var, L, 'SELF'}|B]}
     ]; 
 emit_clause(function_clause, Name, L,H,T,G,B,#recmod{extends=Extends}=St) when Extends /= undefined ->
-    {H1,_} = lists:foldl(fun (H0,{Hs,Ctr}) -> {[{match, L, H0, {var, L, list_to_atom("_Arg" ++ erlang:integer_to_list(Ctr))}}|Hs],Ctr+1} end, {[],1}, H),
+    {H1,_} = lists:foldl(fun (H0,{Hs,Ctr}) -> {[{match, L, dereference(H0), {var, L, list_to_atom("_Arg" ++ erlang:integer_to_list(Ctr))}}|Hs],Ctr+1} end, {[],1}, H),
     H1Args = lists:map(fun (Ctr) -> {var, L, list_to_atom("_Arg" ++ erlang:integer_to_list(Ctr))} end, lists:seq(1,length(H1))),
     [{clause,L,H1++[{match,L,T,{var,L,'THIS'}}],[], % function_clause "handler". Since it will most probably generate warnings, TODO: generate this conditionally
       [
@@ -232,13 +232,18 @@ emit_clause(function_clause, Name, L,H,T,G,B,#recmod{extends=Extends}=St) when E
 emit_clause(function_clause, _Name, _L,_H,_T,_G,_B,_St) ->
     [];
 emit_clause(coercion, Name, L,H,T,G,B,St) ->
-    {H1,_} = lists:foldl(fun (H0,{Hs,Ctr}) -> {[{match, L, H0, {var, L, list_to_atom("_Arg" ++ erlang:integer_to_list(Ctr))}}|Hs],Ctr+1} end, {[],1}, H),
+    {H1,_} = lists:foldl(fun (H0,{Hs,Ctr}) -> {[{match, L, dereference(H0), {var, L, list_to_atom("_Arg" ++ erlang:integer_to_list(Ctr))}}|Hs],Ctr+1} end, {[],1}, H),
     H1Args = lists:map(fun (Ctr) -> {var, L, list_to_atom("_Arg" ++ erlang:integer_to_list(Ctr))} end, lists:seq(1,length(H1))),
     [{clause,L,H1++[{match,L,{var,L,'_'},{var,L,'THIS'}}],[], % THIS does not match, lets try to corce it
       [
        {call, L, {atom, L, Name}, H1Args++[{tuple, L, [{var, L, 'THIS'},{call,L,{remote,L,{var,L,'THIS'},{atom, L, to_base}}, []}]}]}
       ]}].
 
+
+dereference({var, L, Name}) ->
+    {var, L, '_'};
+dereference(H) ->
+    H.
 
 %%% Field name to parameter conversion
 parametrize(FieldName) ->
