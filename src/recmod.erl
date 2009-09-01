@@ -499,7 +499,7 @@ expr({call,Lc,{atom,Lf,F}=Name,As0},#recmod{ static = StF}=St) ->
 	false ->
 	    %% Local function call - needs THIS parameter.
 	    As1 = expr_list(As0,St),
-	    {call,Lc,{atom,Lf,F},As1 ++ [{var,0,'THIS'}]}
+	    {call,Lc,{atom,Lf,F},As1 ++ [{tuple, 0, [{var, 0, 'SELF'},{var,0,'THIS'}]}]}
     end;
 expr({call,Line,F0,As0},St) ->
     %% Other function call
