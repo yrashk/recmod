@@ -249,7 +249,21 @@ dereference(H) ->
 parametrize(FieldName) ->
     list_to_atom(inflector:camelize(atom_to_list(FieldName))).
 
-%%% borrowed from sys_expand_pmod
+%%% The code below is based on sys_expand_pmod.erl
+%%% Erlang Public License notice:
+%% Copyright Ericsson AB 2004-2009. All Rights Reserved.
+%% 
+%% The contents below are subject to the Erlang Public License,
+%% Version 1.1, (the "License"); you may not use this code except in
+%% compliance with the License. You should have received a copy of the
+%% Erlang Public License along with this software. If not, it can be
+%% retrieved online at http://www.erlang.org/.
+%% 
+%% Software distributed under the License is distributed on an "AS IS"
+%% basis, WITHOUT WARRANTY OF ANY KIND, either express or implied. See
+%% the License for the specific language governing rights and limitations
+%% under the License.
+%%%
 
 
 head(Ps,St) -> patterns(Ps,St).
@@ -568,7 +582,6 @@ make_vars(N, M, L) when N =< M ->
     [{var,L,V} | make_vars(N + 1, M, L)];
 make_vars(_, _, _) ->
     [].
-
 
 update_function_name(E, _St) ->
     E.
