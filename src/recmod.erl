@@ -23,7 +23,7 @@ parse_transform(Forms, _Options) ->
     Readers = new_readers(St3#recmod.parameters,St3),
     ToParent = new_to_base(St3),
     Exports = standard_exports(St3),
-    {Forms4, St4} = forms(Forms3, St3, fun exports/2),
+    {Forms4, _St4} = forms(Forms3, St3, fun exports/2),
     {H,T} = lists:splitwith(fun (X) ->
 				    case X of
 					{attribute,_,_,_} ->
@@ -48,26 +48,26 @@ forms([], St0,_) ->
 %% form
 
 % Get module name from -module(M)
-form({attribute,L,module,M}=Form, St0) when is_atom(M) ->
+form({attribute,_L,module,M}=Form, St0) when is_atom(M) ->
     {Form, St0#recmod{ name=M }};
 % TODO: do something when M is not an atom (original parametrized module, for example)
 % form({attribute,L, module, M}=Form, St0) -> ?
 
 % Get modrec fields
-form({attribute,L,record,{Name, Fields}}=Form, #recmod{ name=Name }=St0) ->
+form({attribute,_L,record,{Name, Fields}}=Form, #recmod{ name=Name }=St0) ->
     Params = fields(Fields),
     {Form, St0#recmod{ rec=Fields, parameters = Params }};
 
 % Get static functions
-form({attribute,L,static, StF}=Form, #recmod{ static=StF0 }=St0) when is_list(StF) ->
+form({attribute,_L,static, StF}=Form, #recmod{ static=StF0 }=St0) when is_list(StF) ->
     {Form, St0#recmod{ static=(StF0 ++ StF) }};
 
 % Get extends
-form({attribute,L,extends, Extends}=Form, St0) when is_atom(Extends) ->
+form({attribute,_L,extends, Extends}=Form, St0) when is_atom(Extends) ->
     {Form, St0#recmod{ extends=Extends }};
 
 % Get custom to_base
-form({function,L,to_base,0,Clauses}=Form, St0) ->
+form({function,_L,to_base,0,_Clauses}=Form, St0) ->
     {Form, St0#recmod{ custom_to_base = true }};
 
 form(F, St0) ->
@@ -89,7 +89,7 @@ functions(F, St0) ->
     {F, St0}.
 
 %% extension
-extension({attribute,L,record,{Name, Fields}}=Form, #recmod{ extends=Name }=St0) ->
+extension({attribute,_L,record,{Name, Fields}}=Form, #recmod{ extends=Name }=St0) ->
     Params = fields(Fields),
     {Form, St0#recmod{ extends_parameters = Params }};
 extension(F, St0) ->
@@ -111,7 +111,7 @@ exports({attribute,L,export,Exports}, #recmod{static=StF}=St0) ->
 exports(F, St0) ->
     {F, St0}.
 
-standard_exports(#recmod{parameters = Params}=St) ->
+standard_exports(#recmod{parameters = Params}=_St) ->
     [{attribute,0,export, 
      lists:map(fun({Field,_Param}) ->
 		      {Field,1}
@@ -147,7 +147,7 @@ new_readers([H|T], St) ->
 new_readers([],_) ->
     [].
 
-new_reader({Field,Param},St) ->      
+new_reader({Field,_Param},St) ->      
     {function,0,Field,1,
      [{clause,0,[{match, 0, {var, 0, '_'}, {var, 0, 'THIS'}}],[],
        [{record_field,0,{var,0,'THIS'},St#recmod.name,{atom, 0, Field}}]}]}.
@@ -209,11 +209,11 @@ clause({clause,L,H0,G0,B0},St) ->
     B1 = exprs(B0,St),
     {clause,L,H1,G1,B1}.
 
-emit_clause(original, Name, L,H,T,G,B,St) ->
+emit_clause(original, _Name, L,H,T,G,B,_St) ->
     [{clause,L,H++[{match,L,T,{var,L,'THIS'}}],G,[{match, L, {var, L, 'SELF'}, {var,L,'THIS'}},{var, L, 'SELF'}|B]},
      {clause,L,H++[{match,L,{tuple, L, [{var, L, '_'},T]},{tuple, L, [{var, L, 'SELF'}, {var,L,'THIS'}]}}],G,[{var,L,'THIS'},{var, L, 'SELF'}|B]}
     ]; 
-emit_clause(function_clause, Name, L,H,T,G,B,#recmod{extends=Extends}=St) when Extends /= undefined ->
+emit_clause(function_clause, Name, L,H,T,_G,_B,#recmod{extends=Extends}=St) when Extends /= undefined ->
     {H1,_} = lists:foldl(fun (H0,{Hs,Ctr}) -> {[{match, L, dereference(H0), {var, L, list_to_atom("_Arg" ++ erlang:integer_to_list(Ctr))}}|Hs],Ctr+1} end, {[],1}, H),
     H1Args = lists:map(fun (Ctr) -> {var, L, list_to_atom("_Arg" ++ erlang:integer_to_list(Ctr))} end, lists:seq(1,length(H1))),
     [{clause,L,H1++[{match,L,T,{var,L,'THIS'}}],[], % function_clause "handler". Since it will most probably generate warnings, TODO: generate this conditionally
@@ -231,16 +231,16 @@ emit_clause(function_clause, Name, L,H,T,G,B,#recmod{extends=Extends}=St) when E
     ];
 emit_clause(function_clause, _Name, _L,_H,_T,_G,_B,_St) ->
     [];
-emit_clause(coercion, Name, L,H,T,G,B,St) ->
+emit_clause(coercion, Name, L,H,_T,G,_B,_St) ->
     {H1,_} = lists:foldl(fun (H0,{Hs,Ctr}) -> {[{match, L, dereference(H0), {var, L, list_to_atom("_Arg" ++ erlang:integer_to_list(Ctr))}}|Hs],Ctr+1} end, {[],1}, H),
     H1Args = lists:map(fun (Ctr) -> {var, L, list_to_atom("_Arg" ++ erlang:integer_to_list(Ctr))} end, lists:seq(1,length(H1))),
-    [{clause,L,H1++[{match,L,{var,L,'_'},{var,L,'THIS'}}],[], % THIS does not match, lets try to corce it
+    [{clause,L,H1++[{match,L,{var,L,'_'},{var,L,'THIS'}}],G, % THIS does not match, lets try to corce it
       [
        {call, L, {atom, L, Name}, H1Args++[{tuple, L, [{var, L, 'THIS'},{call,L,{remote,L,{var,L,'THIS'},{atom, L, to_base}}, []}]}]}
       ]}].
 
 
-dereference({var, L, Name}) ->
+dereference({var, L, _Name}) ->
     {var, L, '_'};
 dereference(H) ->
     H.
