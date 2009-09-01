@@ -10,7 +10,7 @@
 	  functions = [],
 	  extends,
 	  extends_parameters,
-	  custom_to_parent = false,
+	  custom_to_base = false,
 	  has_exports = false
 	 }).
 
@@ -21,7 +21,7 @@ parse_transform(Forms, _Options) ->
     RecordFields = new_record_fields(St3),
     NewRecord = new_new(St3),
     Readers = new_readers(St3#recmod.parameters,St3),
-    ToParent = new_to_parent(St3),
+    ToParent = new_to_base(St3),
     Exports = standard_exports(St3),
     {Forms4, St4} = forms(Forms3, St3, fun exports/2),
     {H,T} = lists:splitwith(fun (X) ->
@@ -66,9 +66,9 @@ form({attribute,L,static, StF}=Form, #recmod{ static=StF0 }=St0) when is_list(St
 form({attribute,L,extends, Extends}=Form, St0) when is_atom(Extends) ->
     {Form, St0#recmod{ extends=Extends }};
 
-% Get custom to_parent
-form({function,L,to_parent,0,Clauses}=Form, St0) ->
-    {Form, St0#recmod{ custom_to_parent = true }};
+% Get custom to_base
+form({function,L,to_base,0,Clauses}=Form, St0) ->
+    {Form, St0#recmod{ custom_to_base = true }};
 
 form(F, St0) ->
     {F, St0}.
@@ -116,7 +116,7 @@ standard_exports(#recmod{parameters = Params}=St) ->
      lists:map(fun({Field,_Param}) ->
 		      {Field,1}
 	      end, Params) ++
-	[{record_fields,0},{new,0},{to_parent,1}] 
+	[{record_fields,0},{new,0},{to_base,1}] 
      }];
 standard_exports(_) ->
     [].
@@ -152,11 +152,11 @@ new_reader({Field,Param},St) ->
      [{clause,0,[{match, 0, {var, 0, '_'}, {var, 0, 'THIS'}}],[],
        [{record_field,0,{var,0,'THIS'},St#recmod.name,{atom, 0, Field}}]}]}.
 
-%% to_parent
+%% to_base
 
-new_to_parent(#recmod{custom_to_parent = true}) ->
+new_to_base(#recmod{custom_to_base = true}) ->
     [];
-new_to_parent(#recmod{extends=Rec,extends_parameters=[_|_]}=St) when Rec /= undefined ->
+new_to_base(#recmod{extends=Rec,extends_parameters=[_|_]}=St) when Rec /= undefined ->
     T = {tuple,0,[{atom, 0, St#recmod.name}|
 		  [{var,0,list_to_atom("_" ++ atom_to_list(V))} || {_,V} <- St#recmod.parameters ]
 		 ]},
@@ -164,15 +164,15 @@ new_to_parent(#recmod{extends=Rec,extends_parameters=[_|_]}=St) when Rec /= unde
     CommonRecFields = lists:map(fun (F) ->
 					{record_field,0,{atom, 0, F},{record_field,0,{var,0,'THIS'},St#recmod.name,{atom,0,F}}}
 				end, CommonFields),
-    [{function,0,to_parent,1,
+    [{function,0,to_base,1,
       [{clause, 0, [{match, 0,T,{var,0,'THIS'}}], [],
 	[{record, 0, Rec, CommonRecFields}]}]}];
 
-new_to_parent(St) ->    
+new_to_base(St) ->    
     T = {tuple,0,[{atom, 0, St#recmod.name}|
 		  [{var,0,list_to_atom("_" ++ atom_to_list(V))} || {_,V} <- St#recmod.parameters ]
 		 ]},
-    [{function,0,to_parent,1,
+    [{function,0,to_base,1,
       [{clause,0,[{match, 0, T,{var,0,'THIS'}}],[],
 	[{var, 0, 'THIS'}]}]}].
 
@@ -236,7 +236,7 @@ emit_clause(coercion, Name, L,H,T,G,B,St) ->
     H1Args = lists:map(fun (Ctr) -> {var, L, list_to_atom("_Arg" ++ erlang:integer_to_list(Ctr))} end, lists:seq(1,length(H1))),
     [{clause,L,H1++[{match,L,{var,L,'_'},{var,L,'THIS'}}],[], % THIS does not match, lets try to corce it
       [
-       {call, L, {atom, L, Name}, H1Args++[{tuple, L, [{var, L, 'THIS'},{call,L,{remote,L,{var,L,'THIS'},{atom, L, to_parent}}, []}]}]}
+       {call, L, {atom, L, Name}, H1Args++[{tuple, L, [{var, L, 'THIS'},{call,L,{remote,L,{var,L,'THIS'},{atom, L, to_base}}, []}]}]}
       ]}].
 
 
