@@ -148,8 +148,9 @@ new_readers([],_) ->
     [].
 
 new_reader({Field,_Param},St) ->      
+    T = {tuple,0,[{atom, 0, St#recmod.name}|                                    [{var,0,list_to_atom("_" ++ atom_to_list(V))} || {_,V} <- St# recmod.parameters ]                                                             ]}, 
     {function,0,Field,1,
-     [{clause,0,[{match, 0, {var, 0, '_'}, {var, 0, 'THIS'}}],[],
+     [{clause,0,[{match, 0, T, {var, 0, 'THIS'}}],[],
        [{record_field,0,{var,0,'THIS'},St#recmod.name,{atom, 0, Field}}]}]}.
 
 %% to_base
