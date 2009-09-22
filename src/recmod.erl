@@ -429,7 +429,9 @@ gexpr({op,Line,Op,L0,R0},St) ->
 	    L1 = gexpr(L0,St),
 	    R1 = gexpr(R0,St),
 	    {op,Line,Op,L1,R1}
-    end.
+    end;
+gexpr({record_index, Line, Record, I},_St) ->
+    {record_index, Line, Record, I}.
 
 gexpr_list([E0|Es],St) ->
     E1 = gexpr(E0,St),
