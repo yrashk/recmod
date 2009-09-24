@@ -183,5 +183,11 @@ test("Calling non-matching function in extending recmod should call pass its rec
       end}
     ];
     
+test("Should properly handle calls to imported functions") ->
+    [{f,
+      fun () ->
+	      (#baserecmod{}):defaultimports()
+      end}
+     ];
 
 ?EOT.

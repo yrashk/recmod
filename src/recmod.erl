@@ -11,11 +11,14 @@
 	  extends,
 	  extends_parameters,
 	  custom_to_base = false,
-	  has_exports = false
+	  has_exports = false,
+	  imports = []
 	 }).
 
 parse_transform(Forms, _Options) ->
-    {Forms1, St1} = forms(Forms, #recmod{}, fun form/2),
+    PreModImp = [erlang, packages],
+    {Forms1, St1_} = forms(Forms, #recmod{}, fun form/2),
+    St1 = St1_#recmod{ imports = PreModImp },
     {Forms2, St2} = forms(Forms1, St1, fun extension/2),
     {Forms3, St3} = forms(Forms2, St2, fun functions/2),
     RecordFields = new_record_fields(St3),
@@ -250,7 +253,19 @@ dereference(H) ->
 parametrize(FieldName) ->
     list_to_atom(inflector:camelize(atom_to_list(FieldName))).
 
-%%% The code below is based on sys_expand_pmod.erl
+is_imported(Fun,A,#recmod{imports = Imports}=_St) ->
+    case lists:filter(fun ({Fun1,A1}) ->
+			      Fun1 == Fun andalso A1 == A
+		      end,
+		      lists:flatten(lists:map(fun (I) ->
+						      apply(I,module_info,[exports])
+					      end, Imports))) of
+	[] ->
+	    false;
+	_ ->
+	    true
+    end.
+%%% The code below uses portions of sys_expand_pmod.erl
 %%% Erlang Public License notice:
 %% Copyright Ericsson AB 2004-2009. All Rights Reserved.
 %% 
@@ -311,7 +326,9 @@ pattern({op,_Line,'++',{string,Li,L},R},St) ->
 pattern({op,Line,Op,A},_St) ->
     {op,Line,Op,A};
 pattern({op,Line,Op,L,R},_St) ->
-    {op,Line,Op,L,R}.
+    {op,Line,Op,L,R};
+pattern(Rest, _St) ->
+    Rest.
 
 pattern_grp([{bin_element,L1,E1,S1,T1} | Fs],St) ->
     S2 = case S1 of
@@ -430,8 +447,8 @@ gexpr({op,Line,Op,L0,R0},St) ->
 	    R1 = gexpr(R0,St),
 	    {op,Line,Op,L1,R1}
     end;
-gexpr({record_index, Line, Record, I},_St) ->
-    {record_index, Line, Record, I}.
+gexpr(Rest,_St) ->
+    Rest.
 
 gexpr_list([E0|Es],St) ->
     E1 = gexpr(E0,St),
@@ -519,9 +536,17 @@ expr({call,Lc,{atom,Lf,F}=Name,As0},#recmod{ static = StF}=St) ->
 	    As1 = expr_list(As0,St),
 	    {call,Lc,Name,As1};
 	false ->
-	    %% Local function call - needs THIS parameter.
-	    As1 = expr_list(As0,St),
-	    {call,Lc,{atom,Lf,F},As1 ++ [{tuple, 0, [{var, 0, 'SELF'},{var,0,'THIS'}]}]}
+	    case is_imported(F,length(As0),St) of
+		false ->
+		    %% Local function call - needs THIS parameter.
+		    As1 = expr_list(As0,St),
+		    {call,Lc,{atom,Lf,F},As1 ++ [{tuple, 0, [{var, 0, 'SELF'},{var,0,'THIS'}]}]};
+		true ->
+		    %% Imported function call - definitely no need in THIS
+		    F1 = expr(Name,St),
+		    As1 = expr_list(As0,St),
+		    {call,Lc,F1,As1}
+	    end
     end;
 expr({call,Line,F0,As0},St) ->
     %% Other function call
