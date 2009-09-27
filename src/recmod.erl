@@ -102,13 +102,14 @@ extension(F, St0) ->
 %% exports
 exports({attribute,L,export,Exports}, #recmod{static=StF}=St0) ->
     {{attribute,L,export, 
-      lists:map(fun({Name0, Arity0}) ->
-			{Name0, Arity0+1}
-		end,
-		lists:filter(fun ({Name,Arity}) ->
-				     not (lists:member(Name, StF) orelse lists:member({Name, Arity}, StF))
-			     end,
-			     Exports))
+      lists:map(fun({Name, Arity}) ->
+			case (lists:member(Name, StF) orelse lists:member({Name, Arity}, StF)) of
+			    true ->
+				{Name, Arity};
+			    false ->
+				{Name, Arity+1}
+			end
+		end,Exports)
      }, St0#recmod{has_exports=true}};
 
 exports(F, St0) ->

@@ -1,7 +1,11 @@
 -module(baserecmod).
 -compile({parse_transform, recmod}).
 -include("records.hrl").
--export([argless/0,somefun/1,someotherfun/0, defaultimports/0,localcall/0,localcall/1]).
+-export([st/0,argless/0,somefun/1,someotherfun/0, defaultimports/0,localcall/0,localcall/1]).
+-static([st/0]).
+
+st() ->
+    static.
 
 argless() ->
     [{this, THIS},

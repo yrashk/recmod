@@ -197,4 +197,9 @@ test("Should properly handle calls within module") ->
 	      {#baserecmod{},yes} = (#baserecmod{}):localcall(yes)
       end}];
 
+test("Should export static functions properly") ->
+    [{f,
+      fun () ->
+	      static = baserecmod:st()
+      end}];
 ?EOT.
