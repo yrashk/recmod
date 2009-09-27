@@ -190,4 +190,11 @@ test("Should properly handle calls to imported functions") ->
       end}
      ];
 
+test("Should properly handle calls within module") ->
+    [{f,
+      fun () ->
+	      #baserecmod{} = (#baserecmod{}):localcall(),
+	      {#baserecmod{},yes} = (#baserecmod{}):localcall(yes)
+      end}];
+
 ?EOT.
