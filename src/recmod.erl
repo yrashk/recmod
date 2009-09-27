@@ -235,10 +235,10 @@ emit_clause(function_clause, Name, L,H,T,_G,_B,#recmod{extends=Extends}=St) when
     ];
 emit_clause(function_clause, _Name, _L,_H,_T,_G,_B,_St) ->
     [];
-emit_clause(coercion, Name, L,H,_T,G,_B,_St) ->
+emit_clause(coercion, Name, L,H,_T,_G,_B,_St) ->
     {H1,_} = lists:foldl(fun (H0,{Hs,Ctr}) -> {[{match, L, dereference(H0), {var, L, list_to_atom("_Arg" ++ erlang:integer_to_list(Ctr))}}|Hs],Ctr+1} end, {[],1}, H),
     H1Args = lists:map(fun (Ctr) -> {var, L, list_to_atom("_Arg" ++ erlang:integer_to_list(Ctr))} end, lists:seq(1,length(H1))),
-    [{clause,L,H1++[{match,L,{var,L,'_'},{var,L,'THIS'}}],G, % THIS does not match, lets try to corce it
+    [{clause,L,H1++[{match,L,{var,L,'_'},{var,L,'THIS'}}],[], % THIS does not match, lets try to corce it
       [
        {call, L, {atom, L, Name}, H1Args++[{tuple, L, [{var, L, 'THIS'},{call,L,{remote,L,{var,L,'THIS'},{atom, L, to_base}}, []}]}]}
       ]}].
