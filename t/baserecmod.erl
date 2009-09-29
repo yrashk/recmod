@@ -1,7 +1,7 @@
 -module(baserecmod).
 -compile({parse_transform, recmod}).
 -include("records.hrl").
--export([st/0,argless/0,somefun/1,someotherfun/0, defaultimports/0,localcall/0,localcall/1]).
+-export([st/0,argless/0,somefun/1,someotherfun/0, defaultimports/0,localcall/0,localcall/1, recguarded/0]).
 -static([st/0]).
 
 st() ->
@@ -34,3 +34,9 @@ this() ->
 
 this(A) ->
     {THIS,A}.
+
+recguarded() when Field1 > 1 ->
+    more;
+recguarded() when Field1 =< 1 ->
+    less.    
+

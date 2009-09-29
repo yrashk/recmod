@@ -202,4 +202,19 @@ test("Should export static functions properly") ->
       fun () ->
 	      static = baserecmod:st()
       end}];
+
+test("Should respect field guards") ->
+    [{f,
+      fun () ->
+	      more = (#baserecmod{field1=2}):recguarded(),
+	      less = (#baserecmod{field1=0}):recguarded()
+      end}];
+
+test("Should respect field guards in the extension module") ->
+    [{f,
+      fun () ->
+	      emore = (#extrecmod{field1=2}):recguarded(),
+	      eless = (#extrecmod{field1=0}):recguarded()
+      end}];
+
 ?EOT.

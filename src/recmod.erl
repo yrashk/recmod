@@ -196,17 +196,17 @@ field({record_field,_L,{atom, _L1, Field}, _InitExpr}) ->
 
 %%
 function(Name, Arity, Clauses0, St) ->
-    Clauses1 = clauses(Name,Clauses0,St),
+    Clauses1 = clauses(original, Name,Clauses0,St) ++ clauses(function_clause, Name,Clauses0,St) ++ clauses(coercion, Name,Clauses0,St),
     {Name,Arity,Clauses1}.
 
-clauses(Name,[C|Cs],St) ->
+clauses(Tag, Name,[C|Cs],St) ->
     {clause,L,H,G,B} = clause(C,St),
     T = {tuple,L,[{atom, L, St#recmod.name}|
 		  [{var,L, V} || {_,V} <- St#recmod.parameters ]
 		 ]},
-    emit_clause(original, Name,L,H,T,G,B,St) ++ emit_clause(function_clause, Name,L,H,T,G,B,St) ++ emit_clause(coercion, Name,L,H,T,G,B,St) ++ clauses(Name,Cs,St);
+    emit_clause(Tag, Name,L,H,T,G,B,St) ++ clauses(Tag, Name,Cs,St);
 
-clauses(_,[],_St) -> [].
+clauses(_,_,[],_St) -> [].
 
 clause({clause,L,H0,G0,B0},St) ->
     H1 = head(H0,St),
@@ -239,14 +239,18 @@ emit_clause(function_clause, Name, L,H,T,_G,_B,#recmod{extends=Extends}=St) when
     ];
 emit_clause(function_clause, _Name, _L,_H,_T,_G,_B,_St) ->
     [];
-emit_clause(coercion, Name, L,H,_T,_G,_B,_St) ->
+emit_clause(coercion, Name, L,H,_T,_G,_B,St)  ->
     {H1,_} = lists:foldl(fun (H0,{Hs,Ctr}) -> {[{match, L, dereference(H0), {var, L, list_to_atom("_Arg" ++ erlang:integer_to_list(Ctr))}}|Hs],Ctr+1} end, {[],1}, H),
     H1Args = lists:map(fun (Ctr) -> {var, L, list_to_atom("_Arg" ++ erlang:integer_to_list(Ctr))} end, lists:seq(1,length(H1))),
-    [{clause,L,H1++[{match,L,{var,L,'_'},{var,L,'THIS'}}],[], % THIS does not match, lets try to corce it
-      [
+    [{clause,L,H1++[{match,L,{var,L,'_'},{var,L,'THIS'}}],[
+							   [{op, L, '/=', 
+							    {call,L,{remote,L,{atom, L, erlang},{atom, L, element}},[{integer, L, 1}, {var, L, 'THIS'}]},
+							    {atom, L, St#recmod.name}
+							   }]
+							  ], 
+      [ % THIS does not match, lets try to corce it
        {call, L, {atom, L, Name}, H1Args++[{tuple, L, [{var, L, 'THIS'},{call,L,{remote,L,{var,L,'THIS'},{atom, L, to_base}}, []}]}]}
       ]}].
-
 
 dereference({var, L, _Name}) ->
     {var, L, '_'};
