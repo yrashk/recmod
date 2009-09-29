@@ -1,7 +1,7 @@
 -module(baserecmod).
 -compile({parse_transform, recmod}).
 -include("records.hrl").
--export([st/0,argless/0,somefun/1,someotherfun/0, defaultimports/0,localcall/0,localcall/1, recguarded/0]).
+-export([st/0,argless/0,somefun/1,someotherfun/0, defaultimports/0,localcall/0,localcall/1, recguarded/0,multiarg/2]).
 -static([st/0]).
 
 st() ->
@@ -40,3 +40,5 @@ recguarded() when Field1 > 1 ->
 recguarded() when Field1 =< 1 ->
     less.    
 
+multiarg(A1,A2) ->
+    {A1,A2}.

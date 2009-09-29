@@ -222,7 +222,8 @@ emit_clause(original, _Name, L,H,T,G,B,_St) ->
 emit_clause(function_clause, Name, L,H,T,_G,_B,#recmod{extends=Extends}=St) when Extends /= undefined ->
     {tuple, _, T0} = T,
     T1 = {tuple, L, [ {var, L, list_to_atom("_" ++ atom_to_list(V))} || {_,_,V} <- T0 ]},
-    {H1,_} = lists:foldl(fun (H0,{Hs,Ctr}) -> {[{match, L, dereference(H0), {var, L, list_to_atom("_Arg" ++ erlang:integer_to_list(Ctr))}}|Hs],Ctr+1} end, {[],1}, H),
+    {H1_,_} = lists:foldl(fun (H0,{Hs,Ctr}) -> {[{match, L, dereference(H0), {var, L, list_to_atom("_Arg" ++ erlang:integer_to_list(Ctr))}}|Hs],Ctr+1} end, {[],1}, H),
+    H1 = lists:reverse(H1_),
     H1Args = lists:map(fun (Ctr) -> {var, L, list_to_atom("_Arg" ++ erlang:integer_to_list(Ctr))} end, lists:seq(1,length(H1))),
     [{clause,L,H1++[{match,L,T1,{var,L,'THIS'}}],[], % function_clause "handler". Since it will most probably generate warnings, TODO: generate this conditionally
       [
@@ -240,7 +241,8 @@ emit_clause(function_clause, Name, L,H,T,_G,_B,#recmod{extends=Extends}=St) when
 emit_clause(function_clause, _Name, _L,_H,_T,_G,_B,_St) ->
     [];
 emit_clause(coercion, Name, L,H,_T,_G,_B,St)  ->
-    {H1,_} = lists:foldl(fun (H0,{Hs,Ctr}) -> {[{match, L, dereference(H0), {var, L, list_to_atom("_Arg" ++ erlang:integer_to_list(Ctr))}}|Hs],Ctr+1} end, {[],1}, H),
+    {H1_,_} = lists:foldl(fun (H0,{Hs,Ctr}) -> {[{match, L, dereference(H0), {var, L, list_to_atom("_Arg" ++ erlang:integer_to_list(Ctr))}}|Hs],Ctr+1} end, {[],1}, H),
+    H1 = lists:reverse(H1_),
     H1Args = lists:map(fun (Ctr) -> {var, L, list_to_atom("_Arg" ++ erlang:integer_to_list(Ctr))} end, lists:seq(1,length(H1))),
     [{clause,L,H1++[{match,L,{var,L,'_'},{var,L,'THIS'}}],[
 							   [{op, L, '/=', 

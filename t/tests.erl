@@ -3,177 +3,177 @@
 -include_lib("eunit/include/eunit.hrl").
 -include("records.hrl").
 
- test("Empty recmod should have record_fields/0 returning record names") ->
-     [{f,
-       fun () ->
+test("Empty recmod should have record_fields/0 returning record names") ->
+    [{f,
+      fun () ->
  	      ?assertEqual([data],emptyrecmod:record_fields())
-       end}
-     ];
+      end}
+    ];
 
- test("Empty recmod should have readers") ->
-     [{f,
-       fun () ->
+test("Empty recmod should have readers") ->
+    [{f,
+      fun () ->
  	      ?assertEqual("test", (#emptyrecmod{data="test"}):data())
-       end}
-     ];
+      end}
+    ];
 
- test("Empty recmod should have default object construction") ->
-     [{f,
-       fun () ->
+test("Empty recmod should have default object construction") ->
+    [{f,
+      fun () ->
  	      ?assertEqual(#emptyrecmod{}, (emptyrecmod:new()))
-       end}
-     ];
+      end}
+    ];
 
- test("Base recmod should have record_fields/0 returning record names") ->
-     [{f,
-       fun () ->
+test("Base recmod should have record_fields/0 returning record names") ->
+    [{f,
+      fun () ->
  	      ?assertEqual([field1,field2,field3],baserecmod:record_fields())
-       end}
-     ];
+      end}
+    ];
 
- test("Base recmod should have readers") ->
-     [{f,
-       fun () ->
+test("Base recmod should have readers") ->
+    [{f,
+      fun () ->
  	      Mod = #baserecmod{field1="test1",field2="test2",field3="test3"},
  	      ?assertEqual("test1", Mod:field1()),
  	      ?assertEqual("test2", Mod:field2()),
  	      ?assertEqual("test3", Mod:field3())
-       end}
-     ];
+      end}
+    ];
 
- test("Base recmod should have default object construction") ->
-     [{f,
-       fun () ->
+test("Base recmod should have default object construction") ->
+    [{f,
+      fun () ->
  	      ?assertEqual(#baserecmod{}, (baserecmod:new()))
-       end}
-     ];
+      end}
+    ];
 
- test("Argumentless function should have THIS assigned") ->
-     [{f,
-       fun () ->
+test("Argumentless function should have THIS assigned") ->
+    [{f,
+      fun () ->
  	      Mod = #baserecmod{field1="test1",field2="test2",field3="test3"},
  	      ?assertEqual(Mod, proplists:get_value(this, Mod:argless()))
-       end}];
+      end}];
 
- test("Argumentless function should have all parameters assigned") ->
-     [{f,
-       fun () ->
+test("Argumentless function should have all parameters assigned") ->
+    [{f,
+      fun () ->
  	      Mod = #baserecmod{field1="test1",field2="test2",field3="test3"},
  	      ?assertEqual("test1", proplists:get_value(field1, Mod:argless())),
  	      ?assertEqual("test2", proplists:get_value(field2, Mod:argless())),
  	      ?assertEqual("test3", proplists:get_value(field3, Mod:argless()))
-       end}];
+      end}];
 
- test("In base recmod, argumentless function should have SELF == THIS") ->
-     [{f,
-       fun () ->
+test("In base recmod, argumentless function should have SELF == THIS") ->
+    [{f,
+      fun () ->
  	      Mod = #baserecmod{field1="test1",field2="test2",field3="test3"},
  	      ?assertEqual(proplists:get_value(this, Mod:somefun(somearg)), proplists:get_value(self, Mod:somefun(somearg)))
-       end}];
+      end}];
 
 
- test("Function should have THIS assigned") ->
-     [{f,
-       fun () ->
+test("Function should have THIS assigned") ->
+    [{f,
+      fun () ->
  	      Mod = #baserecmod{field1="test1",field2="test2",field3="test3"},
  	      ?assertEqual(Mod, proplists:get_value(this, Mod:somefun(somearg)))
-       end}];
+      end}];
 
- test("Function should have all parameters assigned") ->
-     [{f,
-       fun () ->
+test("Function should have all parameters assigned") ->
+    [{f,
+      fun () ->
  	      Mod = #baserecmod{field1="test1",field2="test2",field3="test3"},
  	      ?assertEqual("test1", proplists:get_value(field1, Mod:somefun(somearg))),
  	      ?assertEqual("test2", proplists:get_value(field2, Mod:somefun(somearg))),
  	      ?assertEqual("test3", proplists:get_value(field3, Mod:somefun(somearg)))
-       end}];
+      end}];
 
- test("Function should have all arguments assigned") ->
-     [{f,
-       fun () ->
+test("Function should have all arguments assigned") ->
+    [{f,
+      fun () ->
  	      Mod = #baserecmod{field1="test1",field2="test2",field3="test3"},
  	      ?assertEqual(somearg, proplists:get_value(arg, Mod:somefun(somearg)))
        end}];
 
- test("In base recmod, function should have SELF == THIS") ->
-     [{f,
-       fun () ->
+test("In base recmod, function should have SELF == THIS") ->
+    [{f,
+      fun () ->
  	      Mod = #baserecmod{field1="test1",field2="test2",field3="test3"},
  	      ?assertEqual(proplists:get_value(this, Mod:somefun(somearg)), proplists:get_value(self, Mod:somefun(somearg)))
-       end}];
+      end}];
 
- test("Local call to a function should succeed") ->
-     [{f,
-       fun () ->
+test("Local call to a function should succeed") ->
+    [{f,
+      fun () ->
  	      Mod = #baserecmod{field1="test1",field2="test2",field3="test3"},
  	      ?assertEqual(otherfun, proplists:get_value(arg, Mod:someotherfun()))
- 	      end}];
+      end}];
 
 
- test("Local call to a function should pass THIS") ->
-     [{f,
-       fun () ->
+test("Local call to a function should pass THIS") ->
+    [{f,
+      fun () ->
  	      Mod = #baserecmod{field1="test1",field2="test2",field3="test3"},
  	      ?assertEqual(Mod, proplists:get_value(this, Mod:someotherfun()))
- 	      end}];
+      end}];
 
- test("Local call to a function should pass SELF") ->
-     [{f,
-       fun () ->
+test("Local call to a function should pass SELF") ->
+    [{f,
+      fun () ->
  	      Mod = #baserecmod{field1="test1",field2="test2",field3="test3"},
  	      ?assertEqual(Mod, proplists:get_value(self, Mod:someotherfun()))
- 	      end}];
+      end}];
 
- test("Extending recmod should have record_fields/0 returning record names") ->
-     [{f,
-       fun () ->
+test("Extending recmod should have record_fields/0 returning record names") ->
+    [{f,
+      fun () ->
  	      ?assertEqual([field1,field2,otherfield],extrecmod:record_fields())
-       end}
-     ];
+      end}
+    ];
 
- test("Extending recmod should have readers") ->
-     [{f,
-       fun () ->
+test("Extending recmod should have readers") ->
+    [{f,
+      fun () ->
  	      Mod = #extrecmod{field1="test1",field2="test2",otherfield="test3"},
  	      ?assertEqual("test1", Mod:field1()),
  	      ?assertEqual("test2", Mod:field2()),
  	      ?assertEqual("test3", Mod:otherfield())
-       end}
-     ];
+      end}
+    ];
 
- test("Extending recmod should have default object construction") ->
-     [{f,
+test("Extending recmod should have default object construction") ->
+    [{f,
        fun () ->
- 	      ?assertEqual(#extrecmod{}, (extrecmod:new()))
+	       ?assertEqual(#extrecmod{}, (extrecmod:new()))
        end}
-     ];
+    ];
 
- test("Calling undefined function in extending recmod should call base module's implementation with record coerced to base record") ->
-     [{f,
-       fun () ->
+test("Calling undefined function in extending recmod should call base module's implementation with record coerced to base record") ->
+    [{f,
+      fun () ->
  	      BaseMod = #baserecmod{field1="test1",field2="test2"},
  	      Mod = #extrecmod{field1="test1",field2="test2",otherfield="test3"},
  	      ?assertEqual(BaseMod, proplists:get_value(this, Mod:argless()))
        end}
-     ];
+    ];
 
- test("Calling undefined function in extending recmod should call pass its record as SELF to the base") ->
-     [{f,
-       fun () ->
+test("Calling undefined function in extending recmod should call pass its record as SELF to the base") ->
+    [{f,
+      fun () ->
  	      Mod = #extrecmod{field1="test1",field2="test2",otherfield="test3"},
  	      ?assertEqual(Mod, proplists:get_value(self, Mod:argless()))
-       end}
-     ];
-    
+      end}
+    ];
 
- test("Calling non-matching function in extending recmod should call base module's implementation with record coerced to base record") ->
-     [{f,
+
+test("Calling non-matching function in extending recmod should call base module's implementation with record coerced to base record") ->
+    [{f,
        fun () ->
- 	      BaseMod = #baserecmod{field1="test1",field2="test2"},
- 	      Mod = #extrecmod{field1="test1",field2="test2",otherfield="test3"},
- 	      ?assertEqual(BaseMod, proplists:get_value(this, Mod:somefun(something)))
+	       BaseMod = #baserecmod{field1="test1",field2="test2"},
+	       Mod = #extrecmod{field1="test1",field2="test2",otherfield="test3"},
+	       ?assertEqual(BaseMod, proplists:get_value(this, Mod:somefun(something)))
        end}
-     ];
+    ];
 
 test("Calling non-matching function in extending recmod should call pass its record as SELF to the base") ->
     [{f,
@@ -182,7 +182,7 @@ test("Calling non-matching function in extending recmod should call pass its rec
 	      ?assertEqual(Mod, proplists:get_value(self, Mod:somefun(something)))
       end}
     ];
-    
+
 test("Should properly handle calls to imported functions") ->
     [{f,
       fun () ->
@@ -216,5 +216,12 @@ test("Should respect field guards in the extension module") ->
 	      emore = (#extrecmod{field1=2}):recguarded(),
 	      eless = (#extrecmod{field1=0}):recguarded()
       end}];
+
+test("Should pass multiple arguments to a base module in a proper order (BUG)") ->
+    [{f,
+      fun () ->
+	      {1,2} = (#extrecmod{}):multiarg(1,2)
+      end}];
+
 
 ?EOT.
